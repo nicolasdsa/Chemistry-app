@@ -1,0 +1,20 @@
+[tool.poetry]
+name = "chemistry-app"
+version = "0.1.0"
+description = "Chemistry backend API built with FastAPI"
+authors = ["Chemistry App Team <dev@example.com>"]
+packages = [{include = "api"}]
+
+[tool.poetry.dependencies]
+python = "^3.12"
+fastapi = "^0.115.0"
+uvicorn = {version = "^0.30.0", extras = ["standard"]}
+sqlalchemy = "^2.0.0"
+pydantic-settings = "^2.3.0"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.3.0"
+
+[build-system]
+requires = ["poetry-core>=1.8.0"]
+build-backend = "poetry.core.masonry.api"
