@@ -1,15 +1,15 @@
-from api.models.instrument_model import Instrument
-from api.models.reagent_model import Reagent
-from api.models.reaction_model import Reaction
-from api.models.reaction_reagent_model import ReactionReagent
-from api.models.scenario_model import Scenario
-from api.models.scenario_step_model import ScenarioStep
+from models.instrument import Instrument
+from models.reagent import Reagent
+from models.reaction import Reaction
+from models.reaction_reagent import ReactionReagent
+from models.scenario import Scenario
+from models.scenario_step import ScenarioStep
 
 __all__ = [
     "Instrument",
     "Reagent",
+    "Scenario",
     "Reaction",
     "ReactionReagent",
-    "Scenario",
     "ScenarioStep",
 ]

@@ -1,10 +1,14 @@
 from __future__ import annotations
+from typing import TYPE_CHECKING  
 
 from sqlalchemy import ForeignKey, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from api.core.database import Base
+from core.database import Base
 
+if TYPE_CHECKING:
+    from models.reaction import Reaction
+    from models.reagent import Reagent
 
 class ReactionReagent(Base):
     __tablename__ = "reaction_reagents"
@@ -19,5 +23,5 @@ class ReactionReagent(Base):
     coefficient: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
     role: Mapped[str] = mapped_column(String(50), nullable=False)
 
-    reaction: Mapped["Reaction"] = relationship(back_populates="reagents")
-    reagent: Mapped["Reagent"] = relationship(back_populates="reaction_links")
+    reaction: Mapped[Reaction] = relationship(back_populates="reagents")
+    reagent: Mapped[Reagent] = relationship(back_populates="reaction_links")

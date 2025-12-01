@@ -1,12 +1,15 @@
 from __future__ import annotations
-
+from typing import TYPE_CHECKING  
 from datetime import datetime
 
 from sqlalchemy import Boolean, DateTime, String, Text, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from api.core.database import Base
+from core.database import Base
 
+if TYPE_CHECKING:
+    from models.scenario_step import ScenarioStep
+    from models.reaction import Reaction
 
 class Scenario(Base):
     __tablename__ = "scenarios"
@@ -25,13 +28,13 @@ class Scenario(Base):
     )
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
 
-    steps: Mapped[list["ScenarioStep"]] = relationship(
+    steps: Mapped[list[ScenarioStep]] = relationship(
         back_populates="scenario",
         cascade="all, delete-orphan",
         order_by="ScenarioStep.order_index",
         passive_deletes=True,
     )
-    reactions: Mapped[list["Reaction"]] = relationship(
+    reactions: Mapped[list[Reaction]] = relationship(
         back_populates="scenario",
         cascade="all, delete-orphan",
         passive_deletes=True,
