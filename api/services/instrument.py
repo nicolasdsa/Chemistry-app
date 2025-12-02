@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from sqlalchemy.orm import Session
 
-from api.core.exceptions import ConflictError, NotFoundError
-from api.models.instrument import Instrument
+from core.exceptions import ConflictError, NotFoundError
+from models.instrument import Instrument
 
 
 def create_instrument(db: Session, name: str, description: str | None, image_path: str | None) -> Instrument:

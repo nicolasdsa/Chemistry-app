@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from sqlalchemy.orm import Session
 
-from api.core.exceptions import ConflictError, NotFoundError
-from api.models.reagent import Reagent
+from core.exceptions import ConflictError, NotFoundError
+from models.reagent import Reagent
 
 
 def create_reagent(

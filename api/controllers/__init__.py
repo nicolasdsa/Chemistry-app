@@ -1,3 +1,3 @@
-from api.controllers import instrument, reagent
+from controllers import instrument, reagent, scenario, reaction, scenario_run
 
-__all__ = ["instrument", "reagent"]
+__all__ = ["instrument", "reagent", "scenario", "reaction", "scenario_run"]
