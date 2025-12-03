@@ -88,7 +88,10 @@ def _replace_steps(db: Session, scenario: Scenario, steps: Sequence[dict]) -> No
                 action_type=step_data["action_type"],
                 instrument_id=step_data.get("instrument_id"),
                 reagent_id=step_data.get("reagent_id"),
-                target_container=step_data["target_container"],
+                source_container_name=step_data.get("source_container_name"),
+                target_container_name=step_data.get("target_container_name"),
+                amount_value=step_data.get("amount_value"),
+                amount_unit=step_data.get("amount_unit"),
                 text_instruction=step_data["text_instruction"],
                 sound_effect_path=step_data.get("sound_effect_path"),
             )

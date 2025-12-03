@@ -84,6 +84,10 @@ def delete_reaction(db: Session, reaction_id: int) -> None:
     db.commit()
 
 
+def get_required_reagents_for_reaction(reaction: Reaction) -> set[int]:
+    return {link.reagent_id for link in reaction.reagents if link.role == "reagent"}
+
+
 def _replace_reagents(db: Session, reaction: Reaction, reagents: Sequence[dict]) -> None:
     reaction.reagents.clear()
     for reagent_data in reagents:

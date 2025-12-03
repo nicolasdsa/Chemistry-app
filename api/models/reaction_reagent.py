@@ -21,7 +21,7 @@ class ReactionReagent(Base):
         ForeignKey("reagents.id", ondelete="CASCADE"), nullable=False
     )
     coefficient: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
-    role: Mapped[str] = mapped_column(String(50), nullable=False)
+    role: Mapped[str] = mapped_column(String(50), nullable=False, default="reagent")
 
     reaction: Mapped[Reaction] = relationship(back_populates="reagents")
     reagent: Mapped[Reagent] = relationship(back_populates="reaction_links")

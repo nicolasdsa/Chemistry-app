@@ -1,16 +1,16 @@
-from api.schemas.instrument import (
+from schemas.instrument import (
     InstrumentBase,
     InstrumentCreate,
     InstrumentRead,
     InstrumentUpdate,
 )
-from api.schemas.reagent import (
+from schemas.reagent import (
     ReagentBase,
     ReagentCreate,
     ReagentRead,
     ReagentUpdate,
 )
-from api.schemas.reaction import (
+from schemas.reaction import (
     ReactionBase,
     ReactionCreate,
     ReactionRead,
@@ -20,7 +20,8 @@ from api.schemas.reaction import (
     ReactionReagentRead,
     ReactionReagentUpdate,
 )
-from api.schemas.scenario import (
+from schemas.scenario_run import ScenarioRunActionApply
+from schemas.scenario import (
     ScenarioBase,
     ScenarioCreate,
     ScenarioRead,
@@ -56,4 +57,5 @@ __all__ = [
     "ReactionReagentCreate",
     "ReactionReagentRead",
     "ReactionReagentUpdate",
+    "ScenarioRunActionApply",
 ]

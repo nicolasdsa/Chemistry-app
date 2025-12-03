@@ -12,13 +12,17 @@ class ScenarioStepBase(BaseModel):
     action_type: str
     instrument_id: Optional[int] = None
     reagent_id: Optional[int] = None
-    target_container: str
+    source_container_name: Optional[str] = None
+    target_container_name: Optional[str] = None
+    amount_value: Optional[float] = None
+    amount_unit: Optional[str] = None
     text_instruction: str
     sound_effect_path: Optional[str] = None
 
 
 class ScenarioStepCreate(ScenarioStepBase):
     scenario_id: int
+    action_type: str
 
 
 class ScenarioStepUpdate(BaseModel):
@@ -26,7 +30,10 @@ class ScenarioStepUpdate(BaseModel):
     action_type: Optional[str] = None
     instrument_id: Optional[int] = None
     reagent_id: Optional[int] = None
-    target_container: Optional[str] = None
+    source_container_name: Optional[str] = None
+    target_container_name: Optional[str] = None
+    amount_value: Optional[float] = None
+    amount_unit: Optional[str] = None
     text_instruction: Optional[str] = None
     sound_effect_path: Optional[str] = None
 
@@ -34,6 +41,10 @@ class ScenarioStepUpdate(BaseModel):
 class ScenarioStepRead(ScenarioStepBase):
     id: int
     scenario_id: int
+    source_container_name: Optional[str] = None
+    target_container_name: Optional[str] = None
+    amount_value: Optional[float] = None
+    amount_unit: Optional[str] = None
 
     model_config = ConfigDict(from_attributes=True)
 
