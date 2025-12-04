@@ -1,0 +1,28 @@
+<section class="run-state">
+  <h3>Estado da simulação</h3>
+  {% if error_message %}
+    <div class="alert alert-error">
+      {{ error_message }}
+    </div>
+  {% elif run_state.message %}
+    <div class="alert alert-success">
+      {{ run_state.message }}
+    </div>
+  {% endif %}
+  <div class="containers">
+    {% for name, contents in run_state.containers.items() %}
+      <div class="container-card">
+        <h4>Recipiente {{ name }}</h4>
+        {% if contents %}
+          <ul>
+            {% for item in contents %}
+              <li>Reagente ID {{ item.reagent_id }} — {{ item.amount_value }} {{ item.amount_unit }}</li>
+            {% endfor %}
+          </ul>
+        {% else %}
+          <p>Vazio.</p>
+        {% endif %}
+      </div>
+    {% endfor %}
+  </div>
+</section>

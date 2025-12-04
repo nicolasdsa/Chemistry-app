@@ -5,6 +5,8 @@ from routers import (
     scenario,
     reaction,
     scenario_run,
+    ui_scenario,
+    ui_scenario_run,
 )
 
 __all__ = [
@@ -14,4 +16,6 @@ __all__ = [
     "scenario",
     "reaction",
     "scenario_run",
+    "ui_scenario",
+    "ui_scenario_run",
 ]

@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+
+{% block title %}Cenários disponíveis{% endblock %}
+
+{% block content %}
+  <section>
+    <h2>Cenários disponíveis</h2>
+    <ul class="scenario-list">
+      {% for scenario in scenarios %}
+        <li class="scenario-card">
+          <div>
+            <h3>{{ scenario.title }}</h3>
+            <p>{{ scenario.description }}</p>
+          </div>
+          <a href="/ui/scenarios/{{ scenario.id }}/run">
+            <button>Executar</button>
+          </a>
+        </li>
+      {% else %}
+        <li>Não há cenários cadastrados.</li>
+      {% endfor %}
+    </ul>
+  </section>
+{% endblock %}

@@ -1,0 +1,22 @@
+from fastapi import APIRouter, Depends, Request
+from fastapi.responses import HTMLResponse
+from sqlalchemy.orm import Session
+
+from controllers import ui_scenario
+from core.dependencies import get_db
+
+router = APIRouter(
+    prefix="/ui/scenarios",
+    tags=["ui-scenarios"],
+    default_response_class=HTMLResponse,
+)
+
+
+@router.get("/", response_class=HTMLResponse)
+def list_scenarios_page(request: Request, db: Session = Depends(get_db)):
+    return ui_scenario.list_scenarios_page(request, db)
+
+
+@router.get("/{scenario_id}/run", response_class=HTMLResponse)
+def run_scenario_page(scenario_id: int, request: Request, db: Session = Depends(get_db)):
+    return ui_scenario.run_scenario_page(scenario_id, request, db)
