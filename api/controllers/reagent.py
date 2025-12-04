@@ -20,6 +20,7 @@ def create_reagent(payload: ReagentCreate, db: Session):
         formula=payload.formula,
         physical_state=payload.physical_state,
         tags=payload.tags,
+        image_path=payload.image_path,
     )
     data = ReagentRead.model_validate(reagent).model_dump()
     return HTMLResponse(content=json.dumps(data), status_code=201)
@@ -45,6 +46,7 @@ def update_reagent(reagent_id: int, payload: ReagentUpdate, db: Session):
         formula=payload.formula,
         physical_state=payload.physical_state,
         tags=payload.tags,
+        image_path=payload.image_path,
     )
     data = ReagentRead.model_validate(reagent).model_dump()
     return HTMLResponse(content=json.dumps(data), status_code=200)

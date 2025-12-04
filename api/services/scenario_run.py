@@ -12,6 +12,8 @@ from core.exceptions import BadRequestError, NotFoundError
 from models.instrument import Instrument
 from models.reagent import Reagent
 from models.reaction import Reaction
+from models.scenario import Scenario
+from models.scenario_step import ScenarioStep
 from services.reaction import _generate_reaction_key, get_required_reagents_for_reaction
 from services.utils import validate_instrument_reagent_compatibility
 
@@ -43,6 +45,7 @@ class ScenarioRunState:
     scenario_id: int
     containers: Dict[str, List[ContainerContentItem]]
     containers_meta: Dict[str, ContainerMeta]
+    current_step_index: int = 0
     message: Optional[str] = None
 
 
@@ -126,6 +129,7 @@ def _state_to_dict(state: ScenarioRunState) -> Dict[str, object]:
     return {
         "run_id": state.run_id,
         "scenario_id": state.scenario_id,
+        "current_step_index": state.current_step_index,
         "containers": {
             name: [asdict(item) for item in contents]
             for name, contents in state.containers.items()
@@ -144,6 +148,7 @@ def start_scenario_run(scenario_id: int, db: Session) -> Dict[str, object]:
         scenario_id=scenario_id,
         containers=containers,
         containers_meta=containers_meta,
+        current_step_index=0,
     )
     _runs[run_id] = state
     return _state_to_dict(state)
@@ -158,6 +163,54 @@ def _get_state(run_id: str) -> ScenarioRunState:
 def get_run_state(run_id: str, db: Session | None = None) -> Dict[str, object]:
     state = _get_state(run_id)
     return _state_to_dict(state)
+
+
+def _get_ordered_steps_for_scenario(db: Session, scenario_id: int) -> list[ScenarioStep]:
+    scenario = db.get(Scenario, scenario_id)
+    if not scenario:
+        raise NotFoundError("Cenário não encontrado.")
+    return sorted(list(scenario.steps), key=lambda s: s.order_index)
+
+
+def _get_current_step(db: Session, state: ScenarioRunState) -> ScenarioStep | None:
+    steps = _get_ordered_steps_for_scenario(db, state.scenario_id)
+    if state.current_step_index >= len(steps):
+        return None
+    return steps[state.current_step_index]
+
+
+def _does_action_match_step(
+    action_type: str,
+    instrument_id: int | None,
+    source_container_name: str | None,
+    target_container_name: str | None,
+    reagent_id: int | None,
+    amount_value: float | None,
+    amount_unit: str | None,
+    step: ScenarioStep,
+) -> bool:
+    if action_type != step.action_type:
+        return False
+
+    if step.instrument_id is not None and instrument_id != step.instrument_id:
+        return False
+
+    if step.reagent_id is not None and reagent_id != step.reagent_id:
+        return False
+
+    if step.source_container_name is not None and source_container_name != step.source_container_name:
+        return False
+
+    if step.target_container_name is not None and target_container_name != step.target_container_name:
+        return False
+
+    if step.amount_value is not None and amount_value != step.amount_value:
+        return False
+
+    if step.amount_unit is not None and amount_unit != step.amount_unit:
+        return False
+
+    return True
 
 
 def add_reagent_to_container(
@@ -287,6 +340,23 @@ def apply_action(
     unit_value = amount_unit.value if isinstance(amount_unit, AmountUnit) else amount_unit
     unit_value_str = str(unit_value) if unit_value is not None else None
 
+    steps = _get_ordered_steps_for_scenario(db, state.scenario_id)
+    current_step = _get_current_step(db, state)
+    if current_step is None:
+        raise BadRequestError("Este cenário já foi concluído. Não há mais passos a realizar.")
+
+    if not _does_action_match_step(
+        action_type=action_type,
+        instrument_id=instrument_id,
+        source_container_name=source_container_name,
+        target_container_name=target_container_name,
+        reagent_id=reagent_id,
+        amount_value=amount_value,
+        amount_unit=unit_value_str,
+        step=current_step,
+    ):
+        raise BadRequestError("Essa ação não corresponde ao passo atual do cenário.")
+
     if action_type == "add_reagent":
         if reagent_id is None or target_container_name is None or amount_value is None or unit_value_str is None:
             raise BadRequestError("Dados insuficientes para adicionar reagente.")
@@ -300,6 +370,8 @@ def apply_action(
         validate_instrument_reagent_compatibility(instrument, reagent)
         _add_content(state, target_container_name, reagent_id, amount_value, unit_value_str)
         _apply_reaction_if_matches(db, state, target_container_name)
+        state.current_step_index += 1
+        state.message = f"Passo concluído: {current_step.text_instruction}"
         return _state_to_dict(state)
 
     if action_type == "transfer_solid_with_spatula":
@@ -327,6 +399,8 @@ def apply_action(
             _ensure_container_meta(state, target_container_name)
             _add_content(state, target_container_name, reagent_id, amount_value, unit_value_str)
             _apply_reaction_if_matches(db, state, target_container_name)
+            state.current_step_index += 1
+            state.message = f"Passo concluído: {current_step.text_instruction}"
             return _state_to_dict(state)
 
         source_meta = _ensure_container_meta(state, source_container_name)
@@ -337,6 +411,8 @@ def apply_action(
         _remove_content(source_contents, reagent_id, amount_value, unit_value_str)
         _add_content(state, target_container_name, reagent_id, amount_value, unit_value_str)
         _apply_reaction_if_matches(db, state, target_container_name)
+        state.current_step_index += 1
+        state.message = f"Passo concluído: {current_step.text_instruction}"
         return _state_to_dict(state)
 
     if action_type == "transfer_liquid_with_pipette":
@@ -349,9 +425,9 @@ def apply_action(
             raise BadRequestError("Recipiente de destino e reagente são obrigatórios.")
         if amount_value is None or unit_value_str is None:
             raise BadRequestError("Quantidade e unidade são obrigatórias para esta ação.")
-        if unit_value_str != AmountUnit.MILLILITER.value:
-            raise BadRequestError("A unidade para transferência com pipeta deve ser mL.")
-        unit_value_str = AmountUnit.MILLILITER.value
+        if unit_value_str not in {AmountUnit.MILLILITER.value, "drop"}:
+            raise BadRequestError("A unidade para transferência com pipeta deve ser mL ou gotas.")
+        unit_value_str = unit_value_str
 
         reagent = db.get(Reagent, reagent_id)
         if not reagent:
@@ -364,6 +440,8 @@ def apply_action(
             _ensure_container_meta(state, target_container_name)
             _add_content(state, target_container_name, reagent_id, amount_value, unit_value_str)
             _apply_reaction_if_matches(db, state, target_container_name)
+            state.current_step_index += 1
+            state.message = f"Passo concluído: {current_step.text_instruction}"
             return _state_to_dict(state)
 
         source_meta = _ensure_container_meta(state, source_container_name)
@@ -374,6 +452,8 @@ def apply_action(
         _remove_content(source_contents, reagent_id, amount_value, unit_value_str)
         _add_content(state, target_container_name, reagent_id, amount_value, unit_value_str)
         _apply_reaction_if_matches(db, state, target_container_name)
+        state.current_step_index += 1
+        state.message = f"Passo concluído: {current_step.text_instruction}"
         return _state_to_dict(state)
 
     if action_type == "pour_liquid_between_containers":
@@ -396,6 +476,8 @@ def apply_action(
 
         state.containers[source_container_name] = []
         _apply_reaction_if_matches(db, state, target_container_name)
+        state.current_step_index += 1
+        state.message = f"Passo concluído: {current_step.text_instruction}"
         return _state_to_dict(state)
 
     raise BadRequestError("Tipo de ação inválido ou não suportado.")

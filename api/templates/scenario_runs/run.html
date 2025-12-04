@@ -6,88 +6,237 @@
   <section>
     <h2>{{ scenario.title }}</h2>
     <p>{{ scenario.description }}</p>
+  </section>
 
-    {% if scenario.steps %}
-      <h3>Passos planejados</h3>
-      <ol>
-        {% for step in scenario.steps %}
-          <li>{{ step.text_instruction }}</li>
+  <div class="run-layout">
+    <!-- COLUNA ESQUERDA -->
+    <section class="run-column-left">
+      <h3>Ferramentas e reagentes</h3>
+
+      <h4>Instrumentos</h4>
+      <div class="tools-grid">
+        {% for inst in transfer_instruments %}
+          <button type="button"
+                  class="tool-card"
+                  data-tool-type="instrument"
+                  data-tool-id="{{ inst.id }}">
+            {% if inst.image_path %}
+              <img src="/assets/images/{{ inst.image_path }}" alt="{{ inst.name }}" class="tool-image" />
+            {% endif %}
+            <strong>{{ inst.name }}</strong><br />
+            <small>{{ inst.instrument_type }}</small>
+          </button>
         {% endfor %}
-      </ol>
-    {% endif %}
-  </section>
+      </div>
 
-  <section id="run-state"
-           hx-get="/ui/scenario-runs/{{ run_state.run_id }}/state"
-           hx-trigger="load"
-           hx-target="#run-state"
-           hx-swap="innerHTML">
-    Carregando estado da simulação...
-  </section>
+      <h4 style="margin-top: 1rem;">Reagentes</h4>
+      <div class="tools-grid">
+        {% for reagent in reagents %}
+          <button type="button"
+                  class="tool-card"
+                  data-tool-type="reagent"
+                  data-tool-id="{{ reagent.id }}">
+            {% if reagent.image_path %}
+              <img src="/assets/images/{{ reagent.image_path }}" alt="{{ reagent.name }}" class="tool-image" />
+            {% endif %}
+            <strong>{{ reagent.name }}</strong><br />
+            <small>{{ reagent.physical_state }}</small>
+          </button>
+        {% endfor %}
+      </div>
+    </section>
 
-  <section>
-  <h2>Testar ação</h2>
-  <form
-    hx-post="/ui/scenario-runs/{{ run_state.run_id }}/actions"
-    hx-target="#run-state"
-    hx-swap="innerHTML">
+    <!-- COLUNA CENTRAL -->
+    <section class="run-column-center">
+      <h3>Painel de ação</h3>
 
-    <label>Ação:</label>
-    <select name="action_type">
-      <option value="transfer_solid_with_spatula">Transferir sólido com espátula</option>
-      <option value="transfer_liquid_with_pipette">Transferir líquido com pipeta</option>
-      <option value="pour_liquid_between_containers">Despejar entre recipientes</option>
-    </select>
+      <p id="action-panel-hint" class="action-panel-hint">
+        Selecione um reagente na coluna à esquerda para iniciar uma ação.
+      </p>
 
-    <label>Instrumento:</label>
-    <select name="instrument_id">
-      <option value="">(Opcional / não se aplica)</option>
-      {% for inst in instruments %}
-        <option value="{{ inst.id }}">
-          {{ inst.name }} ({{ inst.instrument_type }})
-        </option>
-      {% endfor %}
-    </select>
+      <form
+        id="action-form"
+        class="action-panel-wrapper hidden"
+        hx-post="/ui/scenario-runs/{{ run_state.run_id }}/actions"
+        hx-target="#run-state"
+        hx-swap="innerHTML">
 
-    <label>Recipiente de origem:</label>
-    <select name="source_container_name">
-      <option value="">Sem recipiente de origem (estoque)</option>
-      {% for name in container_names %}
-        <option value="{{ name }}">{{ name }}</option>
-      {% endfor %}
-    </select>
+        <div class="action-panel">
 
-    <label>Recipiente de destino:</label>
-    <select name="target_container_name">
-      <option value="">(Selecione)</option>
-      {% for name in container_names %}
-        <option value="{{ name }}">{{ name }}</option>
-      {% endfor %}
-    </select>
+          <!-- Dropdown de ação (tipo da ação) -->
+          <div class="action-panel-row">
+            <label for="action_type">Tipo de ação</label>
+            <select name="action_type" id="action_type">
+              <option value="transfer_solid_with_spatula">Transferir sólido com espátula</option>
+              <option value="transfer_liquid_with_pipette">Transferir líquido com pipeta</option>
+              <option value="pour_liquid_between_containers">Despejar entre recipientes</option>
+            </select>
+          </div>
 
-    <label>Reagente:</label>
-    <select name="reagent_id">
-      <option value="">(Selecione)</option>
-      {% for reagent in reagents %}
-        <option value="{{ reagent.id }}">
-          {{ reagent.name }} ({{ reagent.physical_state }})
-        </option>
-      {% endfor %}
-    </select>
+          <!-- Instrumento selecionado via card -->
+          <div class="action-panel-row">
+            <label>Instrumento</label>
+            <div id="selected-instrument-label" class="selected-pill">
+              Nenhum instrumento selecionado
+            </div>
+            <input type="hidden" name="instrument_id" id="instrument_id" />
+          </div>
 
-    <label>Quantidade:</label>
-    <input type="number" step="0.1" name="amount_value" />
+          <!-- Reagente selecionado via card -->
+          <div class="action-panel-row">
+            <label>Reagente</label>
+            <div id="selected-reagent-label" class="selected-pill">
+              Nenhum reagente selecionado
+            </div>
+            <input type="hidden" name="reagent_id" id="reagent_id" />
+          </div>
 
-    <label>Unidade:</label>
-    <select name="amount_unit">
-      <option value="">(Selecione)</option>
-      <option value="g">g</option>
-      <option value="mL">mL</option>
-      <option value="drop">gotas</option>
-    </select>
+          <!-- Origem / Destino -->
+          <div class="action-panel-row">
+            <label for="source_container_name">Origem</label>
+            <select name="source_container_name" id="source_container_name">
+              <option value="">Sem recipiente de origem (estoque)</option>
+              {% for name in container_names %}
+                {% set meta = containers_meta[name] %}
+                {% set label = instrument_map.get(meta.instrument_id, name) %}
+                <option value="{{ name }}">{{ label }}</option>
+              {% endfor %}
+            </select>
+          </div>
 
-    <button type="submit">Aplicar ação</button>
-  </form>
-</section>
+          <div class="action-panel-row">
+            <label for="target_container_name">Destino</label>
+            <select name="target_container_name" id="target_container_name">
+              <option value="">(Selecione)</option>
+              {% for name in container_names %}
+                {% set meta = containers_meta[name] %}
+                {% set label = instrument_map.get(meta.instrument_id, name) %}
+                <option value="{{ name }}">{{ label }}</option>
+              {% endfor %}
+            </select>
+          </div>
 
+          <!-- Quantidade / unidade -->
+          <div class="action-panel-row">
+            <label for="amount_value">Quantidade</label>
+            <input type="number" step="0.1" name="amount_value" id="amount_value" />
+          </div>
+
+          <div class="action-panel-row">
+            <label for="amount_unit">Unidade</label>
+            <select name="amount_unit" id="amount_unit">
+              <option value="">(Selecione)</option>
+              <option value="g">g</option>
+              <option value="mL">mL</option>
+              <option value="drop">gotas</option>
+            </select>
+          </div>
+
+          <div class="action-panel-row" style="justify-content: flex-end;">
+            <button type="submit">Realizar ação!</button>
+          </div>
+        </div>
+      </form>
+
+      <section id="run-state"
+               class="run-state"
+               hx-get="/ui/scenario-runs/{{ run_state.run_id }}/state"
+               hx-trigger="load"
+               hx-target="#run-state"
+               hx-swap="innerHTML">
+        Carregando estado da simulação...
+      </section>
+    </section>
+
+    <!-- COLUNA DIREITA -->
+    <section class="run-column-right" id="scenario-steps">
+      <!-- Conteúdo preenchido via hx-swap-oob -->
+    </section>
+  </div>
+
+  <!-- Script para ligar cards ao painel de ação -->
+  <script>
+    (function () {
+      const toolCards = document.querySelectorAll(".tool-card");
+      const instrumentInput = document.getElementById("instrument_id");
+      const reagentInput = document.getElementById("reagent_id");
+      const instrumentLabel = document.getElementById("selected-instrument-label");
+      const reagentLabel = document.getElementById("selected-reagent-label");
+      const actionPanel = document.getElementById("action-form");
+      const actionHint = document.getElementById("action-panel-hint");
+      const actionTypeSelect = document.getElementById("action_type");
+
+      function clearSelected(type) {
+        document.querySelectorAll('.tool-card[data-tool-type="' + type + '"]')
+          .forEach(function (card) {
+            card.classList.remove("selected");
+          });
+      }
+
+      function openActionPanelIfNeeded() {
+        if (!actionPanel) return;
+        const actionType = actionTypeSelect ? actionTypeSelect.value : "";
+        if (actionType === "pour_liquid_between_containers") {
+          actionPanel.classList.remove("hidden");
+          if (actionHint) {
+            actionHint.style.display = "none";
+          }
+        }
+      }
+
+      toolCards.forEach(function (card) {
+        card.addEventListener("click", function () {
+          const type = card.dataset.toolType;
+          const id = card.dataset.toolId;
+          const name = card.querySelector("strong")?.textContent || "";
+
+          if (type === "instrument") {
+            const wasSelected = card.classList.contains("selected");
+            clearSelected("instrument");
+
+            if (wasSelected) {
+              card.classList.remove("selected");
+              if (instrumentInput) instrumentInput.value = "";
+              if (instrumentLabel) instrumentLabel.textContent = "Nenhum instrumento selecionado";
+            } else {
+              card.classList.add("selected");
+              if (instrumentInput) instrumentInput.value = id;
+              if (instrumentLabel) instrumentLabel.textContent = name;
+            }
+          }
+
+          if (type === "reagent") {
+            const wasSelected = card.classList.contains("selected");
+            clearSelected("reagent");
+
+            if (wasSelected) {
+              card.classList.remove("selected");
+              if (reagentInput) reagentInput.value = "";
+              if (reagentLabel) reagentLabel.textContent = "Nenhum reagente selecionado";
+              return;
+            }
+
+            card.classList.add("selected");
+            if (reagentInput) reagentInput.value = id;
+            if (reagentLabel) reagentLabel.textContent = name;
+
+            if (actionPanel && actionPanel.classList.contains("hidden")) {
+              actionPanel.classList.remove("hidden");
+            }
+            if (actionHint) {
+              actionHint.style.display = "none";
+            }
+          }
+        });
+      });
+
+      if (actionTypeSelect) {
+        actionTypeSelect.addEventListener("change", function () {
+          openActionPanelIfNeeded();
+        });
+      }
+
+      openActionPanelIfNeeded();
+    })();
+  </script>
 {% endblock %}

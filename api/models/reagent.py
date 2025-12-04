@@ -18,6 +18,7 @@ class Reagent(Base):
     name: Mapped[str] = mapped_column(String(150), unique=True, nullable=False)
     formula: Mapped[str] = mapped_column(String(100), nullable=False)
     physical_state: Mapped[str] = mapped_column(String(50), nullable=False)
+    image_path: Mapped[str | None] = mapped_column(String(255), nullable=True)
     tags: Mapped[dict | list | str | None] = mapped_column(JSON, nullable=True)
 
     scenario_steps: Mapped[list[ScenarioStep]] = relationship(

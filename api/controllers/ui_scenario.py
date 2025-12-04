@@ -6,8 +6,11 @@ from sqlalchemy.orm import Session
 
 from core.dependencies import get_db
 from core.templates import templates
+from models.instrument import Instrument
+from models.reagent import Reagent
 from services import scenario as scenario_service
 from services import scenario_run as run_service
+from services.utils_instruments import split_instruments_by_container
 
 
 def list_scenarios_page(request: Request, db: Session = Depends(get_db)) -> HTMLResponse:
@@ -26,11 +29,24 @@ def run_scenario_page(
 ) -> HTMLResponse:
     scenario = scenario_service.get_scenario_by_id(db, scenario_id)
     run_state = run_service.start_scenario_run(scenario_id, db=db)
+    reagents = db.query(Reagent).all()
+    all_instruments = db.query(Instrument).all()
+    transfer_instruments, container_instruments = split_instruments_by_container(all_instruments)
+    containers_meta = run_state.get("containers_meta", {})
+    container_names = [
+        name for name, meta in containers_meta.items() if meta.get("is_container")
+    ]
+    instrument_map = {inst.id: inst.name for inst in all_instruments}
     return templates.TemplateResponse(
         "scenario_runs/run.html",
         {
             "request": request,
             "scenario": scenario,
             "run_state": run_state,
+            "reagents": reagents,
+            "transfer_instruments": transfer_instruments,
+            "container_names": container_names,
+            "containers_meta": containers_meta,
+            "instrument_map": instrument_map,
         },
     )

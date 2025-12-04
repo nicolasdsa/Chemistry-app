@@ -18,8 +18,12 @@ from routers import (
 settings = get_settings()
 app = FastAPI(title=settings.app_name)
 
-static_dir = Path(__file__).resolve().parent / "static"
+base_dir = Path(__file__).resolve().parent
+static_dir = base_dir / "static"
+assets_dir = base_dir / "assets"
+
 app.mount("/static", StaticFiles(directory=str(static_dir)), name="static")
+app.mount("/assets", StaticFiles(directory=str(assets_dir)), name="assets")
 
 app.include_router(health_router.router)
 app.include_router(instrument.router)

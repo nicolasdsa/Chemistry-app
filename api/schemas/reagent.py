@@ -10,6 +10,7 @@ class ReagentBase(BaseModel):
     formula: str
     physical_state: str
     tags: Optional[Any] = None
+    image_path: Optional[str] = None
 
 
 class ReagentCreate(ReagentBase):
@@ -21,6 +22,7 @@ class ReagentUpdate(BaseModel):
     formula: Optional[str] = None
     physical_state: Optional[str] = None
     tags: Optional[Any] = None
+    image_path: Optional[str] = None
 
 
 class ReagentRead(ReagentBase):

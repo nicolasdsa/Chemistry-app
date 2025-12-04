@@ -12,6 +12,7 @@ def create_reagent(
     formula: str,
     physical_state: str,
     tags: dict | list | str | None = None,
+    image_path: str | None = None,
 ) -> Reagent:
     existing = db.query(Reagent).filter(Reagent.name == name).first()
     if existing:
@@ -22,6 +23,7 @@ def create_reagent(
         formula=formula,
         physical_state=physical_state,
         tags=tags,
+        image_path=image_path,
     )
     db.add(reagent)
     db.commit()
@@ -47,6 +49,7 @@ def update_reagent(
     formula: str | None = None,
     physical_state: str | None = None,
     tags: dict | list | str | None = None,
+    image_path: str | None = None,
 ) -> Reagent:
     reagent = get_reagent_by_id(db, reagent_id)
 
@@ -62,6 +65,8 @@ def update_reagent(
         reagent.physical_state = physical_state
     if tags is not None:
         reagent.tags = tags
+    if image_path is not None:
+        reagent.image_path = image_path
 
     db.add(reagent)
     db.commit()

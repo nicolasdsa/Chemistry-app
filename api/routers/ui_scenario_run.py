@@ -22,12 +22,12 @@ async def apply_action_ui(
     request: Request,
     run_id: str,
     action_type: str = Form(...),
-    instrument_id: int | None = Form(None),
-    source_container_name: str | None = Form(None),
-    target_container_name: str | None = Form(None),
-    reagent_id: int | None = Form(None),
-    amount_value: float | None = Form(None),
-    amount_unit: str | None = Form(None),
+    instrument_id: str = Form(""),
+    source_container_name: str = Form(""),
+    target_container_name: str = Form(""),
+    reagent_id: str = Form(""),
+    amount_value: str = Form(""),
+    amount_unit: str = Form(""),
     db: Session = Depends(get_db),
 ):
     return await ui_scenario_run.apply_action_ui(

@@ -11,18 +11,55 @@
   {% endif %}
   <div class="containers">
     {% for name, contents in run_state.containers.items() %}
-      <div class="container-card">
-        <h4>Recipiente {{ name }}</h4>
-        {% if contents %}
-          <ul>
-            {% for item in contents %}
-              <li>Reagente ID {{ item.reagent_id }} — {{ item.amount_value }} {{ item.amount_unit }}</li>
-            {% endfor %}
-          </ul>
-        {% else %}
-          <p>Vazio.</p>
-        {% endif %}
-      </div>
+      {% set meta = run_state.containers_meta[name] %}
+      {% if meta.is_container %}
+        {% set instrument_name = instrument_map.get(meta.instrument_id, name) %}
+        <div class="container-card">
+          <h4>Recipiente {{ instrument_name }}</h4>
+          {% if contents %}
+            <ul>
+              {% for item in contents %}
+                {% set reagent_name = reagents_map.get(item.reagent_id, "Reagente " ~ item.reagent_id) %}
+                <li>{{ reagent_name }} — {{ item.amount_value }} {{ item.amount_unit }}</li>
+              {% endfor %}
+            </ul>
+          {% else %}
+            <p>Vazio.</p>
+          {% endif %}
+        </div>
+      {% endif %}
     {% endfor %}
   </div>
 </section>
+
+<section id="scenario-steps"
+         class="run-column-right"
+         hx-swap-oob="innerHTML">
+  <h3>Instruções do cenário</h3>
+
+  <div class="steps-panel">
+    {% if scenario and scenario.steps %}
+      {% for step in scenario.steps %}
+        <div class="step-item {% if loop.index0 == run_state.current_step_index %}step-item-current{% endif %}">
+          <strong>Passo {{ loop.index }}:</strong><br />
+          {{ step.text_instruction }}
+        </div>
+      {% endfor %}
+    {% else %}
+      <p>Este cenário ainda não possui passos cadastrados.</p>
+    {% endif %}
+  </div>
+</section>
+
+{% set completed_index = run_state.current_step_index - 1 %}
+{% if completed_index >= 0 and scenario and completed_index < scenario.steps|length %}
+  {% set completed_step = scenario.steps[completed_index] %}
+  {% if completed_step.sound_effect_path %}
+    <script hx-swap-oob="true">
+      (function() {
+        var audio = new Audio("/assets/audio/{{ completed_step.sound_effect_path }}");
+        audio.play();
+      })();
+    </script>
+  {% endif %}
+{% endif %}
