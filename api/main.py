@@ -3,6 +3,7 @@ from fastapi.staticfiles import StaticFiles
 from pathlib import Path
 
 from core.config import get_settings
+from core.database import SessionLocal
 from core.error_handlers import register_exception_handlers
 from routers import (
     health_router,
@@ -13,6 +14,8 @@ from routers import (
     scenario_run,
     ui_scenario,
     ui_scenario_run,
+    camera,
+    markers,
 )
 
 settings = get_settings()
@@ -33,4 +36,13 @@ app.include_router(reaction.router)
 app.include_router(scenario_run.router)
 app.include_router(ui_scenario.router)
 app.include_router(ui_scenario_run.router)
+app.include_router(camera.router)
+app.include_router(markers.router)
 register_exception_handlers(app)
+
+
+@app.on_event("startup")
+async def startup_event() -> None:
+    app.state.db_session_factory = SessionLocal
+    app.state.current_run_id = None
+    app.state.latest_frame = None

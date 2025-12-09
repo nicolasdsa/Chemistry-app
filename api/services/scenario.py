@@ -14,9 +14,15 @@ def create_scenario(
     title: str,
     description: str,
     is_active: bool = True,
+    initial_state: dict | None = None,
     steps: Sequence[dict] | None = None,
 ) -> Scenario:
-    scenario = Scenario(title=title, description=description, is_active=is_active)
+    scenario = Scenario(
+        title=title,
+        description=description,
+        is_active=is_active,
+        initial_state=initial_state,
+    )
     db.add(scenario)
     db.flush()
 
@@ -45,6 +51,7 @@ def update_scenario(
     title: str | None = None,
     description: str | None = None,
     is_active: bool | None = None,
+    initial_state: dict | None = None,
     steps: Sequence[dict] | None = None,
 ) -> Scenario:
     scenario = get_scenario_by_id(db, scenario_id)
@@ -55,6 +62,8 @@ def update_scenario(
         scenario.description = description
     if is_active is not None:
         scenario.is_active = is_active
+    if initial_state is not None:
+        scenario.initial_state = initial_state
 
     if steps is not None:
         _replace_steps(db, scenario, steps)

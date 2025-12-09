@@ -2,7 +2,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING  
 from datetime import datetime
 
-from sqlalchemy import Boolean, DateTime, String, Text, func
+from sqlalchemy import Boolean, DateTime, JSON, String, Text, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from core.database import Base
@@ -27,6 +27,11 @@ class Scenario(Base):
         nullable=False,
     )
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    initial_state: Mapped[dict | None] = mapped_column(
+        JSON,
+        nullable=True,
+        doc="Serialized initial containers/reagents state. Stored as JSON for simplicity on SQLite.",
+    )
 
     steps: Mapped[list[ScenarioStep]] = relationship(
         back_populates="scenario",

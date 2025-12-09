@@ -5,12 +5,27 @@ from fastapi.responses import HTMLResponse
 from sqlalchemy.orm import Session
 
 from core.dependencies import get_db
+from core.database import SessionLocal
 from core.templates import templates
 from models.instrument import Instrument
 from models.reagent import Reagent
 from services import scenario as scenario_service
 from services import scenario_run as run_service
 from services.utils_instruments import split_instruments_by_container
+from vision.aruco_listener import start_aruco_listener
+
+
+def _ensure_aruco_listener(request: Request) -> None:
+    """
+    Start the ArUco listener only when the user starts a scenario in the UI.
+    """
+    state = request.app.state
+    if getattr(state, "aruco_listener_started", False):
+        return
+    state.db_session_factory = getattr(state, "db_session_factory", SessionLocal)
+    state.latest_frame = getattr(state, "latest_frame", None)
+    start_aruco_listener(state)
+    state.aruco_listener_started = True
 
 
 def list_scenarios_page(request: Request, db: Session = Depends(get_db)) -> HTMLResponse:
@@ -27,8 +42,13 @@ def list_scenarios_page(request: Request, db: Session = Depends(get_db)) -> HTML
 def run_scenario_page(
     scenario_id: int, request: Request, db: Session = Depends(get_db)
 ) -> HTMLResponse:
+    camera_device = request.query_params.get("device") or request.query_params.get("camera")
     scenario = scenario_service.get_scenario_by_id(db, scenario_id)
     run_state = run_service.start_scenario_run(scenario_id, db=db)
+    request.app.state.current_run_id = run_state.get("run_id")
+    if camera_device:
+        request.app.state.camera_device = camera_device
+    _ensure_aruco_listener(request)
     reagents = db.query(Reagent).all()
     all_instruments = db.query(Instrument).all()
     transfer_instruments, container_instruments = split_instruments_by_container(all_instruments)
