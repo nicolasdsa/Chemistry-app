@@ -63,3 +63,28 @@
     </script>
   {% endif %}
 {% endif %}
+{% if not error_message %}
+  <script>
+    (function() {
+      document.querySelectorAll(".tool-card.selected").forEach(function(card) {
+        card.classList.remove("selected");
+      });
+      const instrumentInput = document.getElementById("instrument_id");
+      const reagentInput = document.getElementById("reagent_id");
+      const instrumentLabel = document.getElementById("selected-instrument-label");
+      const reagentLabel = document.getElementById("selected-reagent-label");
+      const sourceSelect = document.getElementById("source_container_name");
+      const targetSelect = document.getElementById("target_container_name");
+      const amountInput = document.getElementById("amount_value");
+      const unitSelect = document.getElementById("amount_unit");
+      if (instrumentInput) instrumentInput.value = "";
+      if (reagentInput) reagentInput.value = "";
+      if (instrumentLabel) instrumentLabel.textContent = "Nenhum instrumento selecionado";
+      if (reagentLabel) reagentLabel.textContent = "Nenhum reagente selecionado";
+      if (sourceSelect) sourceSelect.value = "";
+      if (targetSelect) targetSelect.value = "";
+      if (amountInput) amountInput.value = "";
+      if (unitSelect) unitSelect.value = "";
+    })();
+  </script>
+{% endif %}

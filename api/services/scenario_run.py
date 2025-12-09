@@ -270,13 +270,15 @@ def _apply_reaction_if_matches(
     applicable.sort(key=lambda x: x[0], reverse=True)
     reaction = applicable[0][1]
 
-    total_amount = sum(item.amount_value for item in contents if item.amount_value is not None)
-    unit = next((item.amount_unit for item in contents if item.amount_unit), "un")
-
     required_ids = get_required_reagents_for_reaction(reaction)
-    state.containers[container_name] = [
-        item for item in contents if item.reagent_id not in required_ids
-    ]
+    required_contents = [item for item in contents if item.reagent_id in required_ids]
+    remaining_contents = [item for item in contents if item.reagent_id not in required_ids]
+
+    total_amount = sum(item.amount_value or 0 for item in required_contents)
+    max_item = max(required_contents, key=lambda i: i.amount_value or 0, default=None)
+    unit = max_item.amount_unit if max_item and max_item.amount_unit else "un"
+
+    state.containers[container_name] = remaining_contents
     state.containers[container_name].append(
         ContainerContentItem(
             reagent_id=reaction.product_reagent_id,
