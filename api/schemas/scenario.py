@@ -5,6 +5,9 @@ from typing import Optional
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from schemas.artist import ArtistRead
+from schemas.scenario_screen import ScenarioScreenCreate, ScenarioScreenRead
+
 
 class ScenarioStepBase(BaseModel):
     scenario_id: Optional[int] = None
@@ -56,7 +59,8 @@ class ScenarioBase(BaseModel):
 
 
 class ScenarioCreate(ScenarioBase):
-    pass
+    artist_id: int | None = None
+    screens: list[ScenarioScreenCreate] | None = None
 
 
 class ScenarioUpdate(BaseModel):
@@ -70,5 +74,7 @@ class ScenarioRead(ScenarioBase):
     created_at: datetime
     updated_at: datetime
     steps: list[ScenarioStepRead] = Field(default_factory=list)
+    artist: ArtistRead | None = None
+    screens: list[ScenarioScreenRead] = Field(default_factory=list)
 
     model_config = ConfigDict(from_attributes=True)

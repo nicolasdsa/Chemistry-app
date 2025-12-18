@@ -5,6 +5,7 @@ from typing import Sequence
 from sqlalchemy.orm import Session
 
 from core.exceptions import NotFoundError
+from services.scenario_screen import create_screens_for_scenario
 from models.scenario import Scenario
 from models.scenario_step import ScenarioStep
 
@@ -15,13 +16,22 @@ def create_scenario(
     description: str,
     is_active: bool = True,
     steps: Sequence[dict] | None = None,
+    artist_id: int | None = None,
+    screens: Sequence[dict] | None = None,
 ) -> Scenario:
-    scenario = Scenario(title=title, description=description, is_active=is_active)
+    scenario = Scenario(
+        title=title,
+        description=description,
+        is_active=is_active,
+        artist_id=artist_id,
+    )
     db.add(scenario)
     db.flush()
 
     if steps:
         _replace_steps(db, scenario, steps)
+    if screens:
+        create_screens_for_scenario(db, scenario, screens)
 
     db.commit()
     db.refresh(scenario)

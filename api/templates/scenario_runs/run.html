@@ -8,6 +8,27 @@
     <p>{{ scenario.description }}</p>
   </section>
 
+  <section class="scenario-screens">
+    <div id="scenario-screen-container"
+         data-current-index="0">
+      {% if screens %}
+        {% with screen = screens[0] %}
+          {% include "scenario_runs/partials/screen.html" %}
+        {% endwith %}
+      {% else %}
+        <p>Este cenário ainda não possui telas lúdicas configuradas.</p>
+      {% endif %}
+    </div>
+
+    {% if screens|length > 1 %}
+      <div class="screen-nav">
+        <button type="button" id="btn-prev-screen">Anterior</button>
+        <span id="screen-indicator">Tela 1 de {{ screens|length }}</span>
+        <button type="button" id="btn-next-screen">Próxima</button>
+      </div>
+    {% endif %}
+  </section>
+
   <div class="run-layout">
     <!-- COLUNA ESQUERDA -->
     <section class="run-column-left">
@@ -164,6 +185,10 @@
     </section>
   </div>
 
+  <script id="screens-data" type="application/json">
+    {{ screens_json | safe }}
+  </script>
+
   <!-- Script para ligar cards ao painel de ação -->
   <script>
     (function () {
@@ -247,6 +272,163 @@
       }
 
       openActionPanelIfNeeded();
+    })();
+  </script>
+
+  <script>
+    (function () {
+      const screenContainer = document.getElementById("scenario-screen-container");
+      const screensDataScript = document.getElementById("screens-data");
+      const btnPrev = document.getElementById("btn-prev-screen");
+      const btnNext = document.getElementById("btn-next-screen");
+      const indicator = document.getElementById("screen-indicator");
+      const scenarioId = {{ scenario.id }};
+      let screens = [];
+
+      try {
+        screens = JSON.parse(screensDataScript?.textContent || "[]");
+      } catch (err) {
+        screens = [];
+      }
+
+      function updateIndicator(currentIndex) {
+        if (!indicator) return;
+        indicator.textContent = `Tela ${currentIndex + 1} de ${screens.length}`;
+      }
+
+      function updateNavButtons(currentIndex) {
+        if (btnPrev) btnPrev.disabled = currentIndex <= 0;
+        if (btnNext) btnNext.disabled = currentIndex >= screens.length - 1;
+      }
+
+      function setupGifButton(screenElement) {
+        const playButton = screenElement.querySelector(".screen-play-btn");
+        const gifImage = screenElement.querySelector(".screen-gif");
+        if (!playButton || !gifImage) return;
+
+        playButton.addEventListener("click", function () {
+          const gifPath = gifImage.dataset.gifPath;
+          if (gifPath) {
+            gifImage.src = `/assets/images/${gifPath}?t=${Date.now()}`;
+          }
+        });
+      }
+
+      function setupSlider(screenElement, screenData) {
+        if (!screenElement || screenData?.screen_type !== "title_image_slider") return;
+        const images = screenData.slider_images || [];
+        const imgEl = screenElement.querySelector(".screen-slider-image");
+        const captionEl = screenElement.querySelector(".screen-slider-caption");
+        const prevBtn = screenElement.querySelector(".slider-prev");
+        const nextBtn = screenElement.querySelector(".slider-next");
+        let idx = 0;
+
+        function render() {
+          if (!images.length || !imgEl) return;
+          const current = images[idx];
+          imgEl.src = `/assets/images/${current.image_path}`;
+          imgEl.alt = current.caption || screenData.title || "Slide";
+          if (captionEl) {
+            if (current.caption) {
+              captionEl.textContent = current.caption;
+              captionEl.style.display = "";
+            } else {
+              captionEl.textContent = "";
+              captionEl.style.display = "none";
+            }
+          }
+          if (prevBtn) prevBtn.disabled = idx === 0;
+          if (nextBtn) nextBtn.disabled = idx >= images.length - 1;
+        }
+
+        if (prevBtn) {
+          prevBtn.addEventListener("click", function () {
+            if (idx > 0) {
+              idx -= 1;
+              render();
+            }
+          });
+        }
+        if (nextBtn) {
+          nextBtn.addEventListener("click", function () {
+            if (idx < images.length - 1) {
+              idx += 1;
+              render();
+            }
+          });
+        }
+
+        render();
+      }
+
+      function attachScreenBehaviors(screenElement, screenData) {
+        setupGifButton(screenElement);
+        setupSlider(screenElement, screenData);
+      }
+
+      async function loadScreen(index) {
+        if (!screenContainer || !screens.length || index < 0 || index >= screens.length) {
+          return;
+        }
+
+        const currentScreenElement = screenContainer.querySelector(".scenario-screen");
+
+        try {
+          const response = await fetch(`/ui/scenarios/${scenarioId}/screens/${index}`);
+          if (!response.ok) {
+            return;
+          }
+          const html = await response.text();
+          const temp = document.createElement("div");
+          temp.innerHTML = html.trim();
+          const nextElement = temp.firstElementChild;
+          if (!nextElement) return;
+
+          screenContainer.appendChild(nextElement);
+          attachScreenBehaviors(nextElement, screens[index]);
+          screenContainer.dataset.currentIndex = String(index);
+          updateIndicator(index);
+          updateNavButtons(index);
+
+          const animationKey = screens[index]?.animation_key || "";
+          if (window.labAnimations) {
+            window.labAnimations.applyScreenAnimation(
+              currentScreenElement,
+              nextElement,
+              animationKey
+            );
+          } else {
+            if (currentScreenElement && currentScreenElement !== nextElement) {
+              currentScreenElement.remove();
+            }
+          }
+        } catch (err) {
+          console.error("Erro ao carregar tela do cenário", err);
+        }
+      }
+
+      if (screenContainer && screens.length) {
+        const initialScreen = screenContainer.querySelector(".scenario-screen");
+        attachScreenBehaviors(initialScreen, screens[0]);
+        updateIndicator(0);
+        updateNavButtons(0);
+      }
+
+      if (btnPrev) {
+        btnPrev.addEventListener("click", function () {
+          const currentIndex = Number(screenContainer?.dataset.currentIndex || 0);
+          const targetIndex = currentIndex - 1;
+          loadScreen(targetIndex);
+        });
+      }
+
+      if (btnNext) {
+        btnNext.addEventListener("click", function () {
+          const currentIndex = Number(screenContainer?.dataset.currentIndex || 0);
+          const targetIndex = currentIndex + 1;
+          loadScreen(targetIndex);
+        });
+      }
     })();
   </script>
 {% endblock %}

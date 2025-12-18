@@ -20,6 +20,24 @@ from schemas.reaction import (
     ReactionReagentRead,
     ReactionReagentUpdate,
 )
+from schemas.artist import (
+    ArtistBase,
+    ArtistCreate,
+    ArtistRead,
+    ArtistUpdate,
+    ArtistTimelineEntryBase,
+    ArtistTimelineEntryCreate,
+    ArtistTimelineEntryRead,
+)
+from schemas.scenario_screen import (
+    ScenarioScreenBase,
+    ScenarioScreenCreate,
+    ScenarioScreenRead,
+    ScenarioScreenSliderImageBase,
+    ScenarioScreenSliderImageCreate,
+    ScenarioScreenSliderImageRead,
+    ScenarioScreenType,
+)
 from schemas.scenario_run import ScenarioRunActionApply
 from schemas.scenario import (
     ScenarioBase,
@@ -57,5 +75,19 @@ __all__ = [
     "ReactionReagentCreate",
     "ReactionReagentRead",
     "ReactionReagentUpdate",
+    "ArtistBase",
+    "ArtistCreate",
+    "ArtistRead",
+    "ArtistUpdate",
+    "ArtistTimelineEntryBase",
+    "ArtistTimelineEntryCreate",
+    "ArtistTimelineEntryRead",
+    "ScenarioScreenBase",
+    "ScenarioScreenCreate",
+    "ScenarioScreenRead",
+    "ScenarioScreenSliderImageBase",
+    "ScenarioScreenSliderImageCreate",
+    "ScenarioScreenSliderImageRead",
+    "ScenarioScreenType",
     "ScenarioRunActionApply",
 ]

@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import json
+
 from fastapi import Depends, Request
 from fastapi.responses import HTMLResponse
 from sqlalchemy.orm import Session
@@ -11,6 +13,7 @@ from models.reagent import Reagent
 from services import scenario as scenario_service
 from services import scenario_run as run_service
 from services.utils_instruments import split_instruments_by_container
+from schemas.scenario_screen import ScenarioScreenRead
 
 
 def list_scenarios_page(request: Request, db: Session = Depends(get_db)) -> HTMLResponse:
@@ -28,6 +31,10 @@ def run_scenario_page(
     scenario_id: int, request: Request, db: Session = Depends(get_db)
 ) -> HTMLResponse:
     scenario = scenario_service.get_scenario_by_id(db, scenario_id)
+    screens = list(scenario.screens) if scenario.screens else []
+    screens_json = json.dumps(
+        [ScenarioScreenRead.model_validate(screen).model_dump(mode="json") for screen in screens]
+    )
     run_state = run_service.start_scenario_run(scenario_id, db=db)
     reagents = db.query(Reagent).all()
     all_instruments = db.query(Instrument).all()
@@ -48,5 +55,21 @@ def run_scenario_page(
             "container_names": container_names,
             "containers_meta": containers_meta,
             "instrument_map": instrument_map,
+            "screens": screens,
+            "screens_json": screens_json,
         },
+    )
+
+
+def scenario_screen_partial(
+    scenario_id: int, index: int, request: Request, db: Session = Depends(get_db)
+) -> HTMLResponse:
+    scenario = scenario_service.get_scenario_by_id(db, scenario_id)
+    screens = list(scenario.screens) if scenario.screens else []
+    if index < 0 or index >= len(screens):
+        return HTMLResponse(content="Tela não encontrada.", status_code=404)
+    screen = screens[index]
+    return templates.TemplateResponse(
+        "scenario_runs/partials/screen.html",
+        {"request": request, "screen": screen},
     )

@@ -20,3 +20,10 @@ def list_scenarios_page(request: Request, db: Session = Depends(get_db)):
 @router.get("/{scenario_id}/run", response_class=HTMLResponse)
 def run_scenario_page(scenario_id: int, request: Request, db: Session = Depends(get_db)):
     return ui_scenario.run_scenario_page(scenario_id, request, db)
+
+
+@router.get("/{scenario_id}/screens/{index}", response_class=HTMLResponse)
+def scenario_screen_partial(
+    scenario_id: int, index: int, request: Request, db: Session = Depends(get_db)
+):
+    return ui_scenario.scenario_screen_partial(scenario_id, index, request, db)

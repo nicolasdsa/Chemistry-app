@@ -31,6 +31,8 @@ def create_scenario(payload: ScenarioCreatePayload, db: Session):
         description=payload.description,
         is_active=payload.is_active,
         steps=[step.model_dump() for step in payload.steps],
+        artist_id=payload.artist_id,
+        screens=[screen.model_dump() for screen in payload.screens] if payload.screens else None,
     )
     data = ScenarioRead.model_validate(scenario).model_dump(mode='json')
     return HTMLResponse(content=json.dumps(data), status_code=201)

@@ -13,6 +13,8 @@ from routers import (
     scenario_run,
     ui_scenario,
     ui_scenario_run,
+    artist,
+    scenario_screen,
 )
 
 settings = get_settings()
@@ -33,4 +35,6 @@ app.include_router(reaction.router)
 app.include_router(scenario_run.router)
 app.include_router(ui_scenario.router)
 app.include_router(ui_scenario_run.router)
+app.include_router(artist.router)
+app.include_router(scenario_screen.router)
 register_exception_handlers(app)

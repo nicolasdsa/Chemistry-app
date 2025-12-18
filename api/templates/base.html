@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <title>{% block title %}Laboratório Virtual de Química{% endblock %}</title>
   <link rel="stylesheet" href="/static/styles.css" />
+  <link rel="stylesheet" href="/static/animations.css" />
 </head>
 <body>
   <header>
@@ -12,6 +13,7 @@
   <main id="main-content">
     {% block content %}{% endblock %}
   </main>
+  <script src="/static/animations.js"></script>
   <script src="https://unpkg.com/htmx.org@1.9.10"></script>
 </body>
 </html>

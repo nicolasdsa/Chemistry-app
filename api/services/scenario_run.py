@@ -140,8 +140,18 @@ def _state_to_dict(state: ScenarioRunState) -> Dict[str, object]:
 
 
 def start_scenario_run(scenario_id: int, db: Session) -> Dict[str, object]:
+    scenario = db.get(Scenario, scenario_id)
+    if not scenario:
+        raise NotFoundError("Cenário não encontrado.")
+
     run_id = str(uuid.uuid4())
-    containers_meta = _default_containers_meta(db)
+    try:
+        containers_meta = _default_containers_meta(db)
+    except NotFoundError:
+        if not scenario.steps:
+            containers_meta = {}
+        else:
+            raise
     containers: Dict[str, List[ContainerContentItem]] = {name: [] for name in containers_meta}
     state = ScenarioRunState(
         run_id=run_id,

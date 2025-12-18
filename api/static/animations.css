@@ -1,0 +1,59 @@
+.anim-fade-in-next {
+  animation: anim-fade-in-next 0.4s ease forwards;
+}
+
+@keyframes anim-fade-in-next {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.anim-slide-out-in {
+  animation: anim-slide-in 0.45s ease forwards;
+}
+
+.anim-slide-out-in-current {
+  animation: anim-slide-out 0.45s ease forwards;
+}
+
+@keyframes anim-slide-in {
+  from {
+    opacity: 0;
+    transform: translateX(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes anim-slide-out {
+  from {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(-24px);
+  }
+}
+
+.anim-zoom-in {
+  animation: anim-zoom-in 0.35s ease forwards;
+}
+
+@keyframes anim-zoom-in {
+  from {
+    opacity: 0;
+    transform: scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
