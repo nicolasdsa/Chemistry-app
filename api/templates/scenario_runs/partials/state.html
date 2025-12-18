@@ -9,68 +9,26 @@
       {{ run_state.message }}
     </div>
   {% endif %}
-
-  <div class="viz-grid">
-    <div class="playground">
-      {% for name, contents in run_state.containers.items() %}
-        {% set meta = run_state.containers_meta[name] %}
-        {% if meta.is_container %}
-          {% set instrument_name = instrument_map.get(meta.instrument_id, name) %}
-          {% set total = 0 %}
-          {% for item in contents %}
-            {% set total = total + (item.amount_value or 0) %}
-          {% endfor %}
-          {% set foam_level = "none" %}
-          {% if total > 80 %}
-            {% set foam_level = "high" %}
-          {% elif total > 40 %}
-            {% set foam_level = "medium" %}
-          {% elif total > 0 %}
-            {% set foam_level = "low" %}
+  <div class="containers">
+    {% for name, contents in run_state.containers.items() %}
+      {% set meta = run_state.containers_meta[name] %}
+      {% if meta.is_container %}
+        {% set instrument_name = instrument_map.get(meta.instrument_id, name) %}
+        <div class="container-card">
+          <h4>Recipiente {{ instrument_name }}</h4>
+          {% if contents %}
+            <ul>
+              {% for item in contents %}
+                {% set reagent_name = reagents_map.get(item.reagent_id, "Reagente " ~ item.reagent_id) %}
+                <li>{{ reagent_name }} — {{ item.amount_value }} {{ item.amount_unit }}</li>
+              {% endfor %}
+            </ul>
+          {% else %}
+            <p>Vazio.</p>
           {% endif %}
-          <div class="beaker" data-container="{{ name }}">
-            <div class="beaker-label">{{ instrument_name }}</div>
-            <div class="beaker-body">
-              <div class="foam foam-level-{{ foam_level }}"
-                   style="height: {{ [total, 100]|min }}%;"></div>
-            </div>
-            <div class="beaker-volume">Volume: {{ "%.1f"|format(total) }} u</div>
-          </div>
-        {% endif %}
-      {% endfor %}
-    </div>
-
-    <div class="containers">
-      {% for name, contents in run_state.containers.items() %}
-        {% set meta = run_state.containers_meta[name] %}
-        {% if meta.is_container %}
-          {% set instrument_name = instrument_map.get(meta.instrument_id, name) %}
-          {% set total = 0 %}
-          {% for item in contents %}
-            {% set total = total + (item.amount_value or 0) %}
-          {% endfor %}
-          <div class="container-card">
-            <h4>Recipiente {{ instrument_name }}</h4>
-            <p class="container-meta">
-              Volume estimado: {{ "%.1f"|format(total) }} u
-              <span class="pill pill-{{ 'high' if total > 80 else 'medium' if total > 40 else 'low' if total > 0 else 'none' }}">
-                espuma {{ 'alta' if total > 80 else 'média' if total > 40 else 'baixa' if total > 0 else 'nenhuma' }}
-              </span>
-            </p>
-            {% if contents %}
-              <ul>
-                {% for item in contents %}
-                  {% set reagent_name = reagents_map.get(item.reagent_id, "Reagente " ~ item.reagent_id) %}
-                  <li>{{ reagent_name }} — {{ item.amount_value }} {{ item.amount_unit }}</li>
-                {% endfor %}
-              </ul>
-            {% else %}
-              <p>Vazio.</p>
-            {% endif %}
-          </div>
-        {% endif %}
-      {% endfor %}
-    </div>
+        </div>
+      {% endif %}
+    {% endfor %}
   </div>
 </section>
 
@@ -104,4 +62,29 @@
       })();
     </script>
   {% endif %}
+{% endif %}
+{% if not error_message %}
+  <script>
+    (function() {
+      document.querySelectorAll(".tool-card.selected").forEach(function(card) {
+        card.classList.remove("selected");
+      });
+      const instrumentInput = document.getElementById("instrument_id");
+      const reagentInput = document.getElementById("reagent_id");
+      const instrumentLabel = document.getElementById("selected-instrument-label");
+      const reagentLabel = document.getElementById("selected-reagent-label");
+      const sourceSelect = document.getElementById("source_container_name");
+      const targetSelect = document.getElementById("target_container_name");
+      const amountInput = document.getElementById("amount_value");
+      const unitSelect = document.getElementById("amount_unit");
+      if (instrumentInput) instrumentInput.value = "";
+      if (reagentInput) reagentInput.value = "";
+      if (instrumentLabel) instrumentLabel.textContent = "Nenhum instrumento selecionado";
+      if (reagentLabel) reagentLabel.textContent = "Nenhum reagente selecionado";
+      if (sourceSelect) sourceSelect.value = "";
+      if (targetSelect) targetSelect.value = "";
+      if (amountInput) amountInput.value = "";
+      if (unitSelect) unitSelect.value = "";
+    })();
+  </script>
 {% endif %}

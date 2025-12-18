@@ -4,7 +4,6 @@ from sqlalchemy.orm import Session
 
 from core.exceptions import ConflictError, NotFoundError
 from models.instrument import Instrument
-from vision.marker_generator import generate_aruco_marker
 
 
 def create_instrument(
@@ -15,7 +14,6 @@ def create_instrument(
     instrument_type: str,
     is_container: bool = True,
     allowed_physical_states: str | None = None,
-    marker_id: int | None = None,
 ) -> Instrument:
     existing = db.query(Instrument).filter(Instrument.name == name).first()
     if existing:
@@ -28,11 +26,7 @@ def create_instrument(
         instrument_type=instrument_type,
         is_container=is_container,
         allowed_physical_states=allowed_physical_states,
-        marker_id=marker_id,
     )
-    if marker_id is not None and not image_path:
-        instrument.marker_image_path = _maybe_generate_marker_image(marker_id)
-
     db.add(instrument)
     db.commit()
     db.refresh(instrument)
@@ -59,8 +53,6 @@ def update_instrument(
     instrument_type: str | None = None,
     is_container: bool | None = None,
     allowed_physical_states: str | None = None,
-    marker_id: int | None = None,
-    marker_image_path: str | None = None,
 ) -> Instrument:
     instrument = get_instrument_by_id(db, instrument_id)
 
@@ -80,12 +72,6 @@ def update_instrument(
         instrument.is_container = is_container
     if allowed_physical_states is not None:
         instrument.allowed_physical_states = allowed_physical_states
-    if marker_id is not None and marker_id != instrument.marker_id:
-        instrument.marker_id = marker_id
-        generated_path = _maybe_generate_marker_image(marker_id)
-        instrument.marker_image_path = generated_path
-    if marker_image_path is not None:
-        instrument.marker_image_path = marker_image_path
 
     db.add(instrument)
     db.commit()
@@ -97,14 +83,3 @@ def delete_instrument(db: Session, instrument_id: int) -> None:
     instrument = get_instrument_by_id(db, instrument_id)
     db.delete(instrument)
     db.commit()
-
-
-def _maybe_generate_marker_image(marker_id: int) -> str | None:
-    """
-    Hook for ArUco marker generation. Replace generate_aruco_marker with the real
-    implementation when available.
-    """
-    try:
-        return generate_aruco_marker(marker_id)
-    except Exception:
-        return None

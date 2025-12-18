@@ -7,8 +7,6 @@ from routers import (
     scenario_run,
     ui_scenario,
     ui_scenario_run,
-    camera,
-    markers,
 )
 
 __all__ = [
@@ -20,6 +18,4 @@ __all__ = [
     "scenario_run",
     "ui_scenario",
     "ui_scenario_run",
-    "camera",
-    "markers",
 ]

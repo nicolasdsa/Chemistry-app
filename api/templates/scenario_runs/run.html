@@ -8,37 +8,245 @@
     <p>{{ scenario.description }}</p>
   </section>
 
-  <div class="run-layout live-layout">
-    <!-- CÂMERA -->
-    <section class="panel camera-panel">
-      <div class="panel-header">
-        <h3>Câmera da bancada</h3>
-        <small>Usando feed de /camera/stream</small>
+  <div class="run-layout">
+    <!-- COLUNA ESQUERDA -->
+    <section class="run-column-left">
+      <h3>Ferramentas e reagentes</h3>
+
+      <h4>Instrumentos</h4>
+      <div class="tools-grid">
+        {% for inst in transfer_instruments %}
+          <button type="button"
+                  class="tool-card"
+                  data-tool-type="instrument"
+                  data-tool-id="{{ inst.id }}">
+            {% if inst.image_path %}
+              <img src="/assets/images/{{ inst.image_path }}" alt="{{ inst.name }}" class="tool-image" />
+            {% endif %}
+            <strong>{{ inst.name }}</strong><br />
+          </button>
+        {% endfor %}
       </div>
-      <div class="camera-frame">
-        <img src="/camera/stream" alt="Câmera do experimento" id="camera-stream" />
+
+      <h4 style="margin-top: 1rem;">Reagentes</h4>
+      <div class="tools-grid">
+        {% for reagent in reagents %}
+          <button type="button"
+                  class="tool-card"
+                  data-tool-type="reagent"
+                  data-tool-id="{{ reagent.id }}">
+            {% if reagent.image_path %}
+              <img src="/assets/images/{{ reagent.image_path }}" alt="{{ reagent.name }}" class="tool-image" />
+            {% endif %}
+            <strong>{{ reagent.name }}</strong>
+          </button>
+        {% endfor %}
       </div>
     </section>
 
-    <!-- VISUALIZAÇÃO + ESTADO -->
-    <section class="panel viz-panel">
-      <div class="panel-header">
-        <h3>Visualização do experimento</h3>
-        <small>Atualizado automaticamente via ArUco</small>
-      </div>
+    <!-- COLUNA CENTRAL -->
+    <section class="run-column-center">
+      <h3>Painel de ação</h3>
+
+      <p id="action-panel-hint" class="action-panel-hint">
+        Selecione um reagente na coluna à esquerda para iniciar uma ação.
+      </p>
+
+      <form
+        id="action-form"
+        class="action-panel-wrapper hidden"
+        hx-post="/ui/scenario-runs/{{ run_state.run_id }}/actions"
+        hx-target="#run-state"
+        hx-swap="innerHTML">
+
+        <div class="action-panel">
+
+          <!-- Tipo de ação -->
+          <div class="action-panel-section">
+            <label for="action_type" class="action-panel-label">Tipo de ação</label>
+            <select name="action_type" id="action_type" class="action-panel-select">
+              <option value="transfer_solid_with_spatula">Transferir sólido com espátula</option>
+              <option value="transfer_liquid_with_pipette">Transferir líquido com pipeta</option>
+              <option value="pour_liquid_between_containers">Despejar entre recipientes</option>
+            </select>
+          </div>
+
+          <!-- Instrumento e Reagente -->
+          <div class="action-panel-inline">
+            <div class="action-panel-section">
+              <label class="action-panel-label">Instrumento</label>
+              <div id="selected-instrument-label" class="action-panel-pill">
+                <span class="icon-placeholder">⚙️</span>
+                Selecione
+              </div>
+              <input type="hidden" name="instrument_id" id="instrument_id" />
+            </div>
+
+            <div class="action-panel-section">
+              <label class="action-panel-label">Reagente</label>
+              <div id="selected-reagent-label" class="action-panel-pill">
+                <span class="icon-placeholder">🧪</span>
+                Selecione
+              </div>
+              <input type="hidden" name="reagent_id" id="reagent_id" />
+            </div>
+          </div>
+
+          <!-- Origem e Destino em cards lado a lado -->
+          <div class="action-panel-containers">
+            <div class="action-panel-container-card origin-card">
+              <div class="action-panel-card-label">Origem</div>
+              <div class="action-panel-card-icon">📦</div>
+              <select name="source_container_name" id="source_container_name" class="action-panel-container-select">
+                <option value="">Sem recipiente de origem (estoque)</option>
+                {% for name in container_names %}
+                  {% set meta = containers_meta[name] %}
+                  {% set label = instrument_map.get(meta.instrument_id, name) %}
+                  <option value="{{ name }}">{{ label }}</option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <div class="action-panel-arrow">→</div>
+
+            <div class="action-panel-container-card destination-card">
+              <div class="action-panel-card-label">Destino</div>
+              <div class="action-panel-card-icon">📦</div>
+              <select name="target_container_name" id="target_container_name" class="action-panel-container-select">
+                <option value="">(Selecione)</option>
+                {% for name in container_names %}
+                  {% set meta = containers_meta[name] %}
+                  {% set label = instrument_map.get(meta.instrument_id, name) %}
+                  <option value="{{ name }}">{{ label }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+
+          <!-- Quantidade e Unidade -->
+          <div class="action-panel-quantity">
+            <div class="action-panel-section">
+              <label for="amount_value" class="action-panel-label">Quantidade</label>
+              <input type="number" step="0.1" name="amount_value" id="amount_value" class="action-panel-input" placeholder="0.0" />
+            </div>
+
+            <div class="action-panel-section">
+              <label for="amount_unit" class="action-panel-label">Unidade</label>
+              <select name="amount_unit" id="amount_unit" class="action-panel-select">
+                <option value="">(Selecione)</option>
+                <option value="g">g</option>
+                <option value="mL">mL</option>
+                <option value="drop">gotas</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Botão de ação -->
+          <div class="action-panel-submit">
+            <button type="submit" class="action-panel-button">Adicionar</button>
+          </div>
+        </div>
+      </form>
+
       <section id="run-state"
                class="run-state"
                hx-get="/ui/scenario-runs/{{ run_state.run_id }}/state"
-               hx-trigger="load, every 1s"
+               hx-trigger="load"
                hx-target="#run-state"
                hx-swap="innerHTML">
         Carregando estado da simulação...
       </section>
     </section>
 
-    <!-- PASSOS -->
-    <section class="panel steps-panel" id="scenario-steps">
-      <!-- hx-swap-oob preenche -->
+    <!-- COLUNA DIREITA -->
+    <section class="run-column-right" id="scenario-steps">
+      <!-- Conteúdo preenchido via hx-swap-oob -->
     </section>
   </div>
+
+  <!-- Script para ligar cards ao painel de ação -->
+  <script>
+    (function () {
+      const toolCards = document.querySelectorAll(".tool-card");
+      const instrumentInput = document.getElementById("instrument_id");
+      const reagentInput = document.getElementById("reagent_id");
+      const instrumentLabel = document.getElementById("selected-instrument-label");
+      const reagentLabel = document.getElementById("selected-reagent-label");
+      const actionPanel = document.getElementById("action-form");
+      const actionHint = document.getElementById("action-panel-hint");
+      const actionTypeSelect = document.getElementById("action_type");
+
+      function clearSelected(type) {
+        document.querySelectorAll('.tool-card[data-tool-type="' + type + '"]')
+          .forEach(function (card) {
+            card.classList.remove("selected");
+          });
+      }
+
+      function openActionPanelIfNeeded() {
+        if (!actionPanel) return;
+        const actionType = actionTypeSelect ? actionTypeSelect.value : "";
+        if (actionType === "pour_liquid_between_containers") {
+          actionPanel.classList.remove("hidden");
+          if (actionHint) {
+            actionHint.style.display = "none";
+          }
+        }
+      }
+
+      toolCards.forEach(function (card) {
+        card.addEventListener("click", function () {
+          const type = card.dataset.toolType;
+          const id = card.dataset.toolId;
+          const name = card.querySelector("strong")?.textContent || "";
+
+          if (type === "instrument") {
+            const wasSelected = card.classList.contains("selected");
+            clearSelected("instrument");
+
+            if (wasSelected) {
+              card.classList.remove("selected");
+              if (instrumentInput) instrumentInput.value = "";
+              if (instrumentLabel) instrumentLabel.innerHTML = '<span class="icon-placeholder">⚙️</span>Selecione';
+            } else {
+              card.classList.add("selected");
+              if (instrumentInput) instrumentInput.value = id;
+              if (instrumentLabel) instrumentLabel.innerHTML = '<span class="icon-placeholder">⚙️</span>' + name;
+            }
+          }
+
+          if (type === "reagent") {
+            const wasSelected = card.classList.contains("selected");
+            clearSelected("reagent");
+
+            if (wasSelected) {
+              card.classList.remove("selected");
+              if (reagentInput) reagentInput.value = "";
+              if (reagentLabel) reagentLabel.innerHTML = '<span class="icon-placeholder">🧪</span>Selecione';
+              return;
+            }
+
+            card.classList.add("selected");
+            if (reagentInput) reagentInput.value = id;
+            if (reagentLabel) reagentLabel.innerHTML = '<span class="icon-placeholder">🧪</span>' + name;
+
+            if (actionPanel && actionPanel.classList.contains("hidden")) {
+              actionPanel.classList.remove("hidden");
+            }
+            if (actionHint) {
+              actionHint.style.display = "none";
+            }
+          }
+        });
+      });
+
+      if (actionTypeSelect) {
+        actionTypeSelect.addEventListener("change", function () {
+          openActionPanelIfNeeded();
+        });
+      }
+
+      openActionPanelIfNeeded();
+    })();
+  </script>
 {% endblock %}

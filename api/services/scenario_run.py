@@ -3,7 +3,7 @@ from __future__ import annotations
 import uuid
 from dataclasses import asdict, dataclass
 from enum import Enum
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional
 
 from sqlalchemy import or_
 from sqlalchemy.orm import Session
@@ -483,64 +483,3 @@ def apply_action(
         return _state_to_dict(state)
 
     raise BadRequestError("Tipo de ação inválido ou não suportado.")
-
-
-def apply_action_from_vision(
-    db: Session,
-    run_id: str,
-    source_marker_id: int,
-    target_marker_id: int,
-    trigger_type: str,
-) -> Dict[str, object]:
-    """
-    Resolves ArUco markers to instruments and triggers the expected action in the current step.
-    Simplifications:
-    - Assumes action_type "pour_liquid_between_containers" when one tilted marker is over another.
-    - Searches for containers by marker_id via Instrument.marker_id and compares with the current step.
-    """
-    state = _get_state(run_id)
-    current_step = _get_current_step(db, state)
-    if current_step is None:
-        raise BadRequestError("Cenário já concluído.")
-
-    if current_step.action_type != "pour_liquid_between_containers":
-        raise BadRequestError("Passo atual não é de transferência entre recipientes.")
-
-    source_instrument = (
-        db.query(Instrument).filter(Instrument.marker_id == source_marker_id).first()
-    )
-    target_instrument = (
-        db.query(Instrument).filter(Instrument.marker_id == target_marker_id).first()
-    )
-    if not source_instrument or not target_instrument:
-        raise BadRequestError("Marcador não associado a instrumento.")
-
-    def _container_name_for_instrument(instr_id: int) -> str | None:
-        for name, meta in state.containers_meta.items():
-            if meta.instrument_id == instr_id:
-                return name
-        return None
-
-    source_container = _container_name_for_instrument(source_instrument.id)
-    target_container = _container_name_for_instrument(target_instrument.id)
-    if not source_container or not target_container:
-        raise BadRequestError("Instrumento não mapeado para recipiente na simulação.")
-
-    expected_pair: Tuple[str | None, str | None] = (
-        current_step.source_container_name,
-        current_step.target_container_name,
-    )
-    if expected_pair != (source_container, target_container):
-        raise BadRequestError("Par de recipientes não corresponde ao passo atual.")
-
-    return apply_action(
-        run_id=run_id,
-        action_type="pour_liquid_between_containers",
-        instrument_id=None,
-        source_container_name=source_container,
-        target_container_name=target_container,
-        reagent_id=None,
-        amount_value=None,
-        amount_unit=None,
-        db=db,
-    )

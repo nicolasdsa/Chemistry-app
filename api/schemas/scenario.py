@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Any, Optional
+from typing import Optional
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -53,7 +53,6 @@ class ScenarioBase(BaseModel):
     title: str
     description: str
     is_active: bool = True
-    initial_state: Optional[dict[str, Any]] = None
 
 
 class ScenarioCreate(ScenarioBase):
@@ -64,7 +63,6 @@ class ScenarioUpdate(BaseModel):
     title: Optional[str] = None
     description: Optional[str] = None
     is_active: Optional[bool] = None
-    initial_state: Optional[dict[str, Any]] = None
 
 
 class ScenarioRead(ScenarioBase):
@@ -72,6 +70,5 @@ class ScenarioRead(ScenarioBase):
     created_at: datetime
     updated_at: datetime
     steps: list[ScenarioStepRead] = Field(default_factory=list)
-    initial_state: Optional[dict[str, Any]] = None
 
     model_config = ConfigDict(from_attributes=True)
